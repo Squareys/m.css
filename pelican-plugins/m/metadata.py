@@ -30,13 +30,11 @@ from pelican import utils
 
 logger = logging.getLogger(__name__)
 
-_content_types = ['author',
-                  'category',
-                  'tag']
+_content_types = [('author', 'authors'),
+                  ('category', 'categories'),
+                  ('tag', 'tags')]
 
-def _read_pages(article_generator, content_type):
-    content_type_plural = utils.maybe_pluralize(content_type)
-
+def _read_pages(article_generator, content_type, content_type_plural):
     path = article_generator.settings.get('M_METADATA_' + content_type.upper() + '_PATH',
                                           content_type_plural)
     fullpath = os.path.join(article_generator.settings['PATH'], path)
@@ -55,13 +53,14 @@ def _read_pages(article_generator, content_type):
     return pages
 
 def populate_metadata(article_generator):
-    pages = dict()
-    for content_type in _content_types:
-        pages[content_type] = _read_pages(article_generator, content_type)
+    content_types = _content_types + article_generator.settings.get('M_METADATA_ADDITIONAL_CONTENT_TYPES', [])
 
-    content_type_plural = utils.maybe_pluralize(content_type)
-    for content, _ in article_generator.context.get(content_type_plural):
-        content.page = pages.get(content.slug, {})
+    pages = dict()
+    for content_type, content_type_plural in content_types:
+        pages[content_type] = _read_pages(article_generator, content_type, content_type_plural)
+
+        for content, _ in article_generator.context.get(content_type_plural):
+            content.page = pages.get(content.slug, {})
 
     # Distribute metadata of some specific content types to articles
     for article in article_generator.articles:

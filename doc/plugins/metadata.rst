@@ -227,7 +227,7 @@ and matching a category named *Guest posts*:
 `Tag metadata`_
 ===============
 
-Tag pages are matched to authors based on the slug (so e.g. metadata for
+Tag pages are matched to tags based on the slug (so e.g. metadata for
 tag named *Pantomime* will be in a file named ``tags/pantomime.rst``). The
 following metadata are recognized:
 
@@ -266,3 +266,42 @@ and matching a tag named *Pantomime*:
 .. note-info::
 
     See how tag info is rendered `in the m.css Pelican theme <{tag}Jumbo>`_.
+
+`Custom content metadata`_
+==========================
+
+Custom content pages are matched to the respective content based on the slug
+(so e.g. metadata for "Planet" content named *Beetlejuice* will be in a file
+named ``planets/beelejuice.rst``). The following metadata are recognized:
+
+-   Page content is exposed to the theme in :py:`<content>.page.content` on the
+    content's page.
+-   Page title is exposed to the theme in :py:`tag.page.title` on the content's
+    page. Can be used to provide a longer version of content's name on this page.
+-   The :rst:`:description:` field is exposed to the theme in
+    :py:`<content>.page.description` on the content's page.
+-   The :rst:`:summary:` field is exposed to the theme in
+    :py:`<content>.page.summary` on the content's page.
+
+This is useful for pages that use custom content from other plugins and want to
+add pages without adapting the plugin's code.
+
+To enable metadata for a new content type, add it to
+``M_METADATA_ADDITIONAL_CONTENT_TYPES``:
+
+.. code:: py
+
+    M_METADATA_ADDITIONAL_CONTENT_TYPES = [('planet', 'planets')]
+
+Example of a completely filled "Planet" page, saved under ``planets/beetlejuice.rst``
+and matching a "Planet" named *Beetlejuice*:
+
+.. code:: rst
+
+    ¯\_(ツ)_/¯
+    ##########
+
+    :description: ¯\_(ツ)_/¯
+    :summary: ¯\_(ツ)_/¯
+
+    ¯\_(ツ)_/¯
