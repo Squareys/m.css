@@ -26,15 +26,19 @@ import logging
 import os
 
 from pelican import signals
+from pelican import utils
 
 logger = logging.getLogger(__name__)
 
-_names = {'authors': "Author",
-          'categories': "Category",
-          'tags': "Tag"}
+_content_types = ['author',
+                  'category',
+                  'tag']
 
-def _read_pages(article_generator, key):
-    path = article_generator.settings.get(*key)
+def _read_pages(article_generator, content_type):
+    content_type_plural = utils.maybe_pluralize(content_type)
+
+    path = article_generator.settings.get('M_METADATA_' + content_type.upper() + '_PATH',
+                                          content_type_plural)
     fullpath = os.path.join(article_generator.settings['PATH'], path)
     if not os.path.isdir(fullpath): return {}
 
@@ -43,35 +47,31 @@ def _read_pages(article_generator, key):
         fullf = os.path.join(fullpath, f)
         if not os.path.isfile(fullf): continue
 
-        logger.debug("Read file {} -> {}".format(os.path.join(path, f), {
-            'authors': "Author",
-            'categories': "Category",
-            'tags': "Tag"}[key[1]]))
+        logger.debug("Read file {} -> {}".format(os.path.join(path, f),
+                                                 content_type.capitalize()))
 
         base_path, filename = os.path.split(fullf)
         pages[os.path.splitext(filename)[0]] = article_generator.readers.read_file(base_path, filename, context=article_generator.context)
     return pages
 
 def populate_metadata(article_generator):
-    authors = _read_pages(article_generator, ('M_METADATA_AUTHOR_PATH', 'authors'))
-    categories = _read_pages(article_generator, ('M_METADATA_CATEGORY_PATH', 'categories'))
-    tags = _read_pages(article_generator, ('M_METADATA_TAG_PATH', 'tags'))
+    pages = dict()
+    for content_type in _content_types:
+        pages[content_type] = _read_pages(article_generator, content_type)
 
-    for author, _ in article_generator.authors:
-        author.page = authors.get(author.slug, {})
-    for category, _ in article_generator.categories:
-        category.page = categories.get(category.slug, {})
-    for tag in article_generator.tags:
-        tag.page = tags.get(tag.slug, {})
+    content_type_plural = utils.maybe_pluralize(content_type)
+    for content, _ in article_generator.context.get(content_type_plural):
+        content.page = pages.get(content.slug, {})
 
+    # Distribute metadata of some specific content types to articles
     for article in article_generator.articles:
-        page = authors.get(article.author.slug, {})
+        page = pages['author'].get(article.author.slug, {})
         for i in ['badge', 'image', 'twitter', 'twitter_id']:
             if hasattr(page, i): setattr(article.author, i, getattr(page, i))
         if hasattr(page, 'title'):
             article.author.badge_title = page.title
 
-        page = categories.get(article.category.slug, {})
+        page = page['category'].get(article.category.slug, {})
         for i in ['badge', 'image']:
             if hasattr(page, i): setattr(article.category, i, getattr(page, i))
         if hasattr(page, 'title'):
